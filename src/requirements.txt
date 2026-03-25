@@ -1,0 +1,11 @@
+# Azure Functions core framework
+azure-functions
+
+# Azure OpenAI SDK (version 1.0.0+ is required for the new client structure)
+openai>=1.0.0
+
+# Azure Monitor & Identity for the Timer Trigger metrics check
+azure-monitor-query<2.0.0
+azure-monitor-query
+azure-identity
+

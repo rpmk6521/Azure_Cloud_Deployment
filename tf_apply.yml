@@ -1,0 +1,66 @@
+# python_azurerm_linux_function_app
+name: "Terraform-Apply-for_deploying-Azure-Cloud-Resource"
+on:
+    push:
+        branches:
+            - main
+        paths:
+          - 'pipelines/**' # Only trigger if files in this folder change
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read   # Usually required to checkout code
+jobs:
+    Blue_BlueField_Deployment_CurrentVersion_Deployment_Identical_Regions_Deployment:
+        name: "Blue-Green Deployment Strategies or BlueField_Deployment or GreenField Deployment - CurrentVersion_Deployment_On_Identical_Regions_Deployment"
+        runs-on: ubuntu-latest
+        defaults:
+          run:
+            working-directory: ./pipelines
+        steps:
+            - name: checkout
+              uses: actions/checkout@v2
+
+            - name: setup Terraform
+              uses: hashicorp/setup-terraform@v1
+              with:
+                cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+            - name: Azure login
+              uses: azure/login@v2
+              with:
+                 #creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+                 subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+                 tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+                 client-id: ${{ secrets.AZURE_CLIENT_ID }}
+
+            - name: Terraform Init -upgrade
+              id: init
+              #run: terraform -chdir="../GitOps/Infra/Azure_Kubernetes_Clusters/" init
+              #run: terraform -chdir="../GitOps/Infra/AI_Services_Cognitive_Services_deployment/" init
+              run: terraform -chdir="../python_azurerm_linux_function_app/" init
+             
+            - name: Terraform Plan
+              id: plan
+              if: github.event_name == 'push'
+              #run: terraform -chdir="../GitOps/Infra/Azure_Kubernetes_Clusters/" plan -no-color
+              #run: terraform -chdir="../GitOps/Infra/Azure_Kubernetes_Clusters/" plan -generate-config-out=generated.tf
+              #run: terraform -chdir="../GitOps/Infra/AI_Services_Cognitive_Services_deployment/" plan -generate-config-out=generated.tf
+              run: terraform -chdir="../python_azurerm_linux_function_app/" plan
+
+              #continue-on-error: true
+            
+
+            - name: Terraform plan Status
+              if: steps.plan.outcome == 'failure'
+              run: exit 1
+            
+            - name: Terraform Apply
+              if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+              #run: terraform -chdir="../GitOps/Infra/Azure_Kubernetes_Clusters/" apply -auto-approve
+              #run: terraform -chdir="../GitOps/Infra/Azure_Kubernetes_Clusters/" apply -auto-approve
+              #run: terraform -chdir="../GitOps/Infra/AI_Services_Cognitive_Services_deployment/" apply -auto-approve
+              run: terraform -chdir="../python_azurerm_linux_function_app/" apply -auto-approve
+
+            #- name: Terraform Destroy
+            #  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+            #  run: terraform -chdir="../GitOps/Infra/Azure_Kubernetes_Clusters/" destroy
